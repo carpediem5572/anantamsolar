@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anantam Solar Quotation Builder</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --blue: #002e5d;
+            --gold: #f9b115;
+            --light-gray: #f4f4f4;
+        }
+
+        /* UI Styling - Only visible on screen */
+        body { font-family: 'Montserrat', sans-serif; background: #2c3e50; margin: 0; padding: 0; }
+        .editor-sidebar {
+            position: fixed; left: 0; top: 0; bottom: 0; width: 350px;
+            background: white; padding: 20px; overflow-y: auto; z-index: 100;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+        }
+        .editor-sidebar h2 { color: var(--blue); margin-bottom: 20px; font-size: 18px; border-bottom: 2px solid var(--gold); }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 5px; }
+        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { 
+            width: 100%; padding: 15px; background: var(--blue); color: white; 
+            border: none; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 10px;
+        }
+
+        /* PDF Preview Area */
+        #pdf-content { width: 210mm; margin-left: 380px; background: white; }
+
+        /* General Page Layout (Ditto to PDF) */
+        .pdf-page {
+            width: 210mm; height: 297mm;
+            position: relative; overflow: hidden;
+            box-sizing: border-box;
+            page-break-after: always;
+            background: white;
+        }
+
+        /* PAGE 1: COVER DESIGN */
+        .cover-bg { height: 100%; width: 100%; position: absolute; }
+        .blue-stripe { height: 40%; background: var(--blue); clip-path: polygon(0 0, 100% 0, 100% 85%, 0% 100%); }
+        .gold-border { height: 5px; background: var(--gold); margin-top: -5px; }
+        
+        .cover-content { position: relative; padding: 60px; color: white; }
+        .logo-box { width: 180px; height: 180px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 40px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        
+        .client-info-box { margin-top: 250px; color: #333; }
+        .quote-title { font-size: 36px; color: var(--blue); font-weight: 700; margin: 0; }
+        .client-name { font-size: 28px; color: var(--gold); font-weight: 700; margin-top: 10px; }
+
+        /* PAGE 4: TABLE */
+        .content-header { background: var(--blue); color: white; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; }
+        .table-container { padding: 40px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { background: #eee; padding: 15px; text-align: left; border: 1px solid #ddd; }
+        td { padding: 15px; border: 1px solid #ddd; }
+        .grand-total-section { margin-top: 30px; float: right; width: 300px; }
+        .total-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .grand-total { background: var(--blue); color: white; padding: 15px; font-weight: bold; margin-top: 10px; display: flex; justify-content: space-between; }
+
+        @media print {
+            body { background: none; }
+            .editor-sidebar { display: none; }
+            #pdf-content { margin-left: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="editor-sidebar">
+        <h2>SOLAR QUOTATION BUILDER</h2>
+        
+        <div class="input-group">
+            <label>Client Name</label>
+            <input type="text" id="in-client" value="Tirth Agro Technology Pvt. Ltd." oninput="updatePreview()">
+        </div>
+        <div class="input-group">
+            <label>Location</label>
+            <input type="text" id="in-loc" value="Rajkot" oninput="updatePreview()">
+        </div>
+        <div class="input-group">
+            <label>Plant Capacity</label>
+            <input type="text" id="in-cap" value="500 kW" oninput="updatePreview()">
+        </div>
+        <div class="input-group">
+            <label>Number of Panels</label>
+            <input type="number" id="in-qty" value="1000" oninput="updatePreview()">
+        </div>
+        <div class="input-group">
+            <label>Rate per Panel (₹)</label>
+            <input type="number" id="in-rate" value="20" oninput="updatePreview()">
+        </div>
+        <div class="input-group">
+            <label>GST %</label>
+            <input type="number" id="in-gst" value="18" oninput="updatePreview()">
+        </div>
+
+        <button onclick="downloadPDF()">DOWNLOAD PROFESSIONAL PDF</button>
+    </div>
+
+    <div id="pdf-content">
+        <div class="pdf-page">
+            <div class="blue-stripe"></div>
+            <div class="gold-border"></div>
+            <div class="cover-content">
+                <div class="logo-box">
+                    <img src="https://ugc.production.linktr.ee/3ac8045d-7d8d-48af-9246-f76f55b2bf32_WhatsApp-Image-2025-12-18-at-1.26.45-PM.jpeg?io=true&size=avatar-v3_0" alt="Anantam Solar" style="width: 80%;">
+                </div>
+                <div class="client-info-box">
+                    <p style="text-transform: uppercase; letter-spacing: 2px;">Cleaning Service Quotation</p>
+                    <h1 class="quote-title">FOR SOLAR PV PLANT</h1>
+                    <div class="client-name" id="view-client">Tirth Agro Technology Pvt. Ltd.</div>
+                    <p><b>Location:</b> <span id="view-loc">Rajkot</span></p>
+                    <p><b>Capacity:</b> <span id="view-cap">500 kW</span></p>
+                </div>
+            </div>
+            <div style="position:absolute; bottom:60px; left:60px;">
+                <p style="color:var(--blue); font-weight: bold;">Anantam Solar</p>
+                <p style="font-size: 12px; line-height: 0.5;">+91 96014 66066 | Junagadh, Gujarat</p>
+            </div>
+        </div>
+
+        <div class="pdf-page" style="padding:60px;">
+            <h2 style="color:var(--blue); border-bottom: 2px solid var(--gold); padding-bottom: 10px;">Why Professional Cleaning?</h2>
+            <p>Dust, bird droppings, and hard water stains can reduce your solar generation by up to 25-30%.</p>
+            <div style="display: flex; gap: 20px; margin-top: 40px;">
+                <div style="flex:1; background: var(--light-gray); padding: 20px; border-radius: 8px;">
+                    <h4 style="color:var(--gold)">Increased Generation</h4>
+                    <p style="font-size:13px">Clean panels allow maximum sunlight to reach the cells, boosting output immediately.</p>
+                </div>
+                <div style="flex:1; background: var(--light-gray); padding: 20px; border-radius: 8px;">
+                    <h4 style="color:var(--gold)">Panel Longevity</h4>
+                    <p style="font-size:13px">Removing corrosive bird droppings prevents permanent hot-spot damage to the glass.</p>
+                </div>
+            </div>
+            </div>
+
+        <div class="pdf-page">
+            <div class="content-header">
+                <h3>COMMERCIAL QUOTATION</h3>
+                <span id="view-date"></span>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Description</th>
+                            <th>Qty (Panels)</th>
+                            <th>Rate</th>
+                            <th>Total Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Solar Module Wet Cleaning Service<br><small>(Using DM Water & Specialized Brushes)</small></td>
+                            <td id="view-qty">1000</td>
+                            <td id="view-rate">₹20</td>
+                            <td id="view-subtotal">₹20,000</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="grand-total-section">
+                    <div class="total-row"><span>Subtotal</span> <span id="final-subtotal">₹20,000</span></div>
+                    <div class="total-row"><span>GST (<span id="view-gst-per">18</span>%)</span> <span id="final-gst">₹3,600</span></div>
+                    <div class="grand-total"><span>GRAND TOTAL</span> <span id="final-grand">₹23,600</span></div>
+                </div>
+
+                <div style="margin-top: 200px; font-size: 12px;">
+                    <h4 style="color:var(--blue)">Terms & Conditions:</h4>
+                    <ul>
+                        <li>Safe access and water connection to be provided by client.</li>
+                        <li>Payment: 100% after completion of service.</li>
+                        <li>Validity: 15 Days.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updatePreview() {
+            const client = document.getElementById('in-client').value;
+            const loc = document.getElementById('in-loc').value;
+            const cap = document.getElementById('in-cap').value;
+            const qty = parseFloat(document.getElementById('in-qty').value) || 0;
+            const rate = parseFloat(document.getElementById('in-rate').value) || 0;
+            const gstPer = parseFloat(document.getElementById('in-gst').value) || 0;
+
+            const subtotal = qty * rate;
+            const gstAmt = (subtotal * gstPer) / 100;
+            const total = subtotal + gstAmt;
+
+            document.getElementById('view-client').innerText = client;
+            document.getElementById('view-loc').innerText = loc;
+            document.getElementById('view-cap').innerText = cap;
+            document.getElementById('view-qty').innerText = qty;
+            document.getElementById('view-rate').innerText = '₹' + rate;
+            document.getElementById('view-subtotal').innerText = '₹' + subtotal.toLocaleString('en-IN');
+            document.getElementById('final-subtotal').innerText = '₹' + subtotal.toLocaleString('en-IN');
+            document.getElementById('view-gst-per').innerText = gstPer;
+            document.getElementById('final-gst').innerText = '₹' + gstAmt.toLocaleString('en-IN');
+            document.getElementById('final-grand').innerText = '₹' + total.toLocaleString('en-IN');
+            document.getElementById('view-date').innerText = new Date().toLocaleDateString('en-IN');
+        }
+
+        function downloadPDF() {
+            const element = document.getElementById('pdf-content');
+            const opt = {
+                margin: 0,
+                filename: 'Anantam_Solar_Quotation.pdf',
+                image: { type: 'jpeg', quality: 1 },
+                html2canvas: { scale: 3, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(element).save();
+        }
+
+        updatePreview();
+    </script>
+</body>
+</html>
