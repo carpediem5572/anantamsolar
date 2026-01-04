@@ -3,225 +3,271 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Anantam Solar Quotation Builder</title>
+    <title>Anantam Solar | Professional Maintenance Quote</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --blue: #002e5d;
-            --gold: #f9b115;
-            --light-gray: #f4f4f4;
-        }
+        :root { --blue: #002e5d; --gold: #f9b115; --text: #333; }
+        * { box-sizing: border-box; -webkit-print-color-adjust: exact; }
+        body { font-family: 'Poppins', sans-serif; margin: 0; background: #1a1a1a; display: flex; }
 
-        /* UI Styling - Only visible on screen */
-        body { font-family: 'Montserrat', sans-serif; background: #2c3e50; margin: 0; padding: 0; }
-        .editor-sidebar {
-            position: fixed; left: 0; top: 0; bottom: 0; width: 350px;
-            background: white; padding: 20px; overflow-y: auto; z-index: 100;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.3);
-        }
-        .editor-sidebar h2 { color: var(--blue); margin-bottom: 20px; font-size: 18px; border-bottom: 2px solid var(--gold); }
-        .input-group { margin-bottom: 15px; }
-        label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 5px; }
-        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        button { 
-            width: 100%; padding: 15px; background: var(--blue); color: white; 
-            border: none; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 10px;
-        }
+        /* Left Control Panel */
+        .sidebar { width: 380px; background: white; height: 100vh; position: fixed; padding: 25px; box-shadow: 4px 0 15px rgba(0,0,0,0.5); overflow-y: auto; z-index: 1000; }
+        .sidebar h2 { color: var(--blue); font-size: 1.3rem; border-bottom: 3px solid var(--gold); padding-bottom: 10px; margin-bottom: 20px; }
+        .input-box { margin-bottom: 15px; }
+        label { display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 5px; color: #444; text-transform: uppercase; }
+        input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.9rem; transition: 0.3s; }
+        input:focus { border-color: var(--blue); outline: none; box-shadow: 0 0 5px rgba(0,46,93,0.2); }
+        .btn-gen { background: var(--blue); color: white; border: none; width: 100%; padding: 18px; font-weight: bold; cursor: pointer; border-radius: 6px; margin-top: 20px; font-size: 1rem; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .btn-gen:hover { background: #004080; transform: translateY(-2px); }
 
-        /* PDF Preview Area */
-        #pdf-content { width: 210mm; margin-left: 380px; background: white; }
-
-        /* General Page Layout (Ditto to PDF) */
-        .pdf-page {
-            width: 210mm; height: 297mm;
-            position: relative; overflow: hidden;
-            box-sizing: border-box;
-            page-break-after: always;
-            background: white;
-        }
-
-        /* PAGE 1: COVER DESIGN */
-        .cover-bg { height: 100%; width: 100%; position: absolute; }
-        .blue-stripe { height: 40%; background: var(--blue); clip-path: polygon(0 0, 100% 0, 100% 85%, 0% 100%); }
-        .gold-border { height: 5px; background: var(--gold); margin-top: -5px; }
+        /* Right Preview Area */
+        .preview-area { margin-left: 380px; padding: 40px; width: calc(100% - 380px); display: flex; flex-direction: column; align-items: center; }
+        #pdf-template { width: 210mm; background: white; }
         
-        .cover-content { position: relative; padding: 60px; color: white; }
-        .logo-box { width: 180px; height: 180px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 40px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .page { width: 210mm; height: 296mm; position: relative; overflow: hidden; padding: 80px 60px; page-break-after: always; background: white; }
         
-        .client-info-box { margin-top: 250px; color: #333; }
-        .quote-title { font-size: 36px; color: var(--blue); font-weight: 700; margin: 0; }
-        .client-name { font-size: 28px; color: var(--gold); font-weight: 700; margin-top: 10px; }
+        /* Design Elements */
+        .header-curve { position: absolute; top: 0; left: 0; width: 100%; height: 300px; background: var(--blue); clip-path: polygon(0 0, 100% 0, 100% 60%, 0% 100%); z-index: 1; }
+        .gold-line { position: absolute; top: 295px; left: 0; width: 100%; height: 8px; background: var(--gold); z-index: 2; transform: skewY(-5deg); transform-origin: left; }
+        .footer-info { position: absolute; bottom: 0; left: 0; width: 100%; height: 110px; background: #f4f4f4; border-top: 5px solid var(--blue); padding: 30px 60px; display: flex; justify-content: space-between; font-size: 0.85rem; }
 
-        /* PAGE 4: TABLE */
-        .content-header { background: var(--blue); color: white; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; }
-        .table-container { padding: 40px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th { background: #eee; padding: 15px; text-align: left; border: 1px solid #ddd; }
-        td { padding: 15px; border: 1px solid #ddd; }
-        .grand-total-section { margin-top: 30px; float: right; width: 300px; }
-        .total-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
-        .grand-total { background: var(--blue); color: white; padding: 15px; font-weight: bold; margin-top: 10px; display: flex; justify-content: space-between; }
+        /* Logo & Titles */
+        .logo-wrap { width: 150px; height: 150px; background: white; border-radius: 50%; padding: 20px; position: relative; z-index: 10; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border: 4px solid var(--gold); }
+        .inner-logo { width: 60px; }
+
+        .cover-text { position: relative; z-index: 5; margin-top: 30px; color: white; }
+        .client-section { margin-top: 220px; }
+        .client-section h3 { color: var(--gold); margin: 0; font-weight: 400; letter-spacing: 2px; }
+        .client-section h1 { color: var(--blue); font-size: 3.5rem; margin: 0; text-transform: uppercase; font-weight: 800; }
+        
+        /* Service Cards */
+        .service-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-top: 40px; }
+        .s-card { border: 1px solid #eee; padding: 25px; border-radius: 15px; position: relative; }
+        .s-card::before { content: ''; position: absolute; top: 0; left: 0; height: 100%; width: 5px; background: var(--gold); border-radius: 15px 0 0 15px; }
+        .s-card h4 { color: var(--blue); margin-top: 0; margin-bottom: 10px; font-size: 1.1rem; }
+        .s-card p { font-size: 0.85rem; line-height: 1.6; color: #555; margin: 0; }
+
+        /* Table */
+        table { width: 100%; border-collapse: collapse; margin-top: 30px; border-radius: 10px; overflow: hidden; }
+        th { background: var(--blue); color: white; padding: 20px; text-align: left; font-size: 0.8rem; letter-spacing: 1px; }
+        td { padding: 20px; border-bottom: 1px solid #eee; font-size: 0.95rem; }
+        .total-block { background: #f9f9f9; padding: 30px; border-radius: 15px; margin-top: 30px; border: 1px solid #eee; }
+        .flex-row { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .grand-row { border-top: 2px solid var(--gold); padding-top: 15px; margin-top: 10px; font-size: 1.4rem; font-weight: 700; color: var(--blue); }
 
         @media print {
-            body { background: none; }
-            .editor-sidebar { display: none; }
-            #pdf-content { margin-left: 0; }
+            .sidebar { display: none; }
+            .preview-area { margin-left: 0; padding: 0; }
+            #pdf-template { box-shadow: none; }
         }
     </style>
 </head>
 <body>
 
-    <div class="editor-sidebar">
-        <h2>SOLAR QUOTATION BUILDER</h2>
+    <div class="sidebar">
+        <div style="text-align: center; margin-bottom: 25px;">
+            <img src="https://ugc.production.linktr.ee/3ac8045d-7d8d-48af-9246-f76f55b2bf32_WhatsApp-Image-2025-12-18-at-1.26.45-PM.jpeg?io=true&size=avatar-v3_0" style="width: 100px; border-radius: 15px;">
+        </div>
+        <h2>SERVICE QUOTE GEN</h2>
         
-        <div class="input-group">
-            <label>Client Name</label>
-            <input type="text" id="in-client" value="Tirth Agro Technology Pvt. Ltd." oninput="updatePreview()">
+        <div class="input-box">
+            <label>Client / Company Name</label>
+            <input type="text" id="in-client" placeholder="e.g. Tirth Agro" oninput="update()">
         </div>
-        <div class="input-group">
-            <label>Location</label>
-            <input type="text" id="in-loc" value="Rajkot" oninput="updatePreview()">
+        <div class="input-box">
+            <label>Site Location</label>
+            <input type="text" id="in-loc" placeholder="e.g. Rajkot" oninput="update()">
         </div>
-        <div class="input-group">
-            <label>Plant Capacity</label>
-            <input type="text" id="in-cap" value="500 kW" oninput="updatePreview()">
+        <div class="input-box">
+            <label>No. of Solar Panels</label>
+            <input type="number" id="in-qty" value="3200" oninput="update()">
         </div>
-        <div class="input-group">
-            <label>Number of Panels</label>
-            <input type="number" id="in-qty" value="1000" oninput="updatePreview()">
+        <div class="input-box">
+            <label>Plant Capacity (kWp)</label>
+            <input type="text" id="in-cap" value="1056 Kw" oninput="update()">
         </div>
-        <div class="input-group">
-            <label>Rate per Panel (₹)</label>
-            <input type="number" id="in-rate" value="20" oninput="updatePreview()">
+        <div class="input-box">
+            <label>Service Rate per Panel (₹)</label>
+            <input type="number" id="in-rate" value="25" oninput="update()">
         </div>
-        <div class="input-group">
-            <label>GST %</label>
-            <input type="number" id="in-gst" value="18" oninput="updatePreview()">
+        <div class="input-box">
+            <label>Applicable GST %</label>
+            <input type="number" id="in-gst" value="18" oninput="update()">
         </div>
-
-        <button onclick="downloadPDF()">DOWNLOAD PROFESSIONAL PDF</button>
+        <button class="btn-gen" onclick="download()">GENERATE PROPOSAL</button>
     </div>
 
-    <div id="pdf-content">
-        <div class="pdf-page">
-            <div class="blue-stripe"></div>
-            <div class="gold-border"></div>
-            <div class="cover-content">
-                <div class="logo-box">
-                    <img src="https://ugc.production.linktr.ee/3ac8045d-7d8d-48af-9246-f76f55b2bf32_WhatsApp-Image-2025-12-18-at-1.26.45-PM.jpeg?io=true&size=avatar-v3_0" alt="Anantam Solar" style="width: 80%;">
+    <div class="preview-area">
+        <div id="pdf-template">
+            <div class="page">
+                <div class="header-curve"></div>
+                <div class="gold-line"></div>
+                <div class="logo-wrap">
+                    <img src="https://ugc.production.linktr.ee/3ac8045d-7d8d-48af-9246-f76f55b2bf32_WhatsApp-Image-2025-12-18-at-1.26.45-PM.jpeg?io=true&size=avatar-v3_0" style="width: 100%;">
                 </div>
-                <div class="client-info-box">
-                    <p style="text-transform: uppercase; letter-spacing: 2px;">Cleaning Service Quotation</p>
-                    <h1 class="quote-title">FOR SOLAR PV PLANT</h1>
-                    <div class="client-name" id="view-client">Tirth Agro Technology Pvt. Ltd.</div>
-                    <p><b>Location:</b> <span id="view-loc">Rajkot</span></p>
-                    <p><b>Capacity:</b> <span id="view-cap">500 kW</span></p>
+                <div class="cover-text">
+                    <h2 style="margin:0; letter-spacing: 6px; font-weight: 700;">ANANTAM SOLAR</h2>
+                    <p style="color: var(--gold); font-weight: bold; margin-top: 5px; font-size: 0.9rem;">Professional Solar Maintenance Solutions</p>
                 </div>
-            </div>
-            <div style="position:absolute; bottom:60px; left:60px;">
-                <p style="color:var(--blue); font-weight: bold;">Anantam Solar</p>
-                <p style="font-size: 12px; line-height: 0.5;">+91 96014 66066 | Junagadh, Gujarat</p>
-            </div>
-        </div>
+                
+                <div class="client-section">
+                    <h3>PREPARED FOR:</h3>
+                    <h1 id="out-client">TIRTH AGRO</h1>
+                    <div style="margin-top: 40px; font-size: 1.1rem; color: #444; border-top: 1px solid #ddd; padding-top: 20px; display: inline-block;">
+                        <p style="margin: 8px 0;"><b>Site Location:</b> <span id="out-loc">Rajkot</span></p>
+                        <p style="margin: 8px 0;"><b>Total Modules:</b> <span id="out-qty-c">3200</span> Nos</p>
+                        <p style="margin: 8px 0;"><b>Total Capacity:</b> <span id="out-cap">1056 Kw</span></p>
+                    </div>
+                </div>
 
-        <div class="pdf-page" style="padding:60px;">
-            <h2 style="color:var(--blue); border-bottom: 2px solid var(--gold); padding-bottom: 10px;">Why Professional Cleaning?</h2>
-            <p>Dust, bird droppings, and hard water stains can reduce your solar generation by up to 25-30%.</p>
-            <div style="display: flex; gap: 20px; margin-top: 40px;">
-                <div style="flex:1; background: var(--light-gray); padding: 20px; border-radius: 8px;">
-                    <h4 style="color:var(--gold)">Increased Generation</h4>
-                    <p style="font-size:13px">Clean panels allow maximum sunlight to reach the cells, boosting output immediately.</p>
+                <div class="footer-info">
+                    <div><b>Anantam Solar</b><br>Junagadh, Gujarat</div>
+                    <div style="text-align: right;"><b>Service Inquiry:</b><br>+91 96014 66066</div>
                 </div>
-                <div style="flex:1; background: var(--light-gray); padding: 20px; border-radius: 8px;">
-                    <h4 style="color:var(--gold)">Panel Longevity</h4>
-                    <p style="font-size:13px">Removing corrosive bird droppings prevents permanent hot-spot damage to the glass.</p>
-                </div>
-            </div>
             </div>
 
-        <div class="pdf-page">
-            <div class="content-header">
-                <h3>COMMERCIAL QUOTATION</h3>
-                <span id="view-date"></span>
+            <div class="page">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--blue); padding-bottom: 15px; margin-bottom: 40px;">
+                    <h2 style="color:var(--blue); margin:0; text-transform: uppercase; letter-spacing: 1px;">Scope of Maintenance</h2>
+                    <img src="https://ugc.production.linktr.ee/3ac8045d-7d8d-48af-9246-f76f55b2bf32_WhatsApp-Image-2025-12-18-at-1.26.45-PM.jpeg?io=true&size=avatar-v3_0" class="inner-logo">
+                </div>
+                
+                <p style="color:#666; font-size: 0.95rem; margin-bottom: 30px;">Anantam Solar provides end-to-end solar asset management to ensure your investment delivers maximum returns. Our service goes beyond simple washing.</p>
+
+                <div class="service-grid">
+                    <div class="s-card">
+                        <h4>Professional Cleaning</h4>
+                        <p>Removal of bird droppings, industrial soot, and hard water scaling using specialized soft-bristle equipment and neutral agents.</p>
+                    </div>
+                    <div class="s-card">
+                        <h4>Visual Inspection</h4>
+                        <p>Detailed check for micro-cracks, hotspots, and glass discoloration that might impact performance or safety.</p>
+                    </div>
+                    <div class="s-card">
+                        <h4>Electrical Health Check</h4>
+                        <p>Verification of MC4 connectors, string health, and checking for any loose wiring or rodent damage in DC lines.</p>
+                    </div>
+                    <div class="s-card">
+                        <h4>Structure Integrity</h4>
+                        <p>Periodic check of nut-bolts, clamps, and earthing strips to ensure the solar plant withstands high wind speeds.</p>
+                    </div>
+                </div>
+
+                <div style="margin-top: 60px; background: var(--blue); color: white; padding: 40px; border-radius: 20px;">
+                    <h3 style="margin-top: 0; color: var(--gold);">Why Anantam Maintenance?</h3>
+                    <ul style="line-height: 2; font-size: 0.95rem;">
+                        <li>Trained Manpower for Height & Electrical Safety.</li>
+                        <li>Detailed Post-Service Generation Report.</li>
+                        <li>Specialized Tools to prevent glass scratching.</li>
+                        <li>Regular Scheduling to maintain 99%+ Uptime.</li>
+                    </ul>
+                </div>
+                
+                <div class="footer-info">
+                    <p>Maximizing Generation, Protecting Assets.</p>
+                    <p>www.anantamsolar.com</p>
+                </div>
             </div>
-            <div class="table-container">
+
+            <div class="page">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--blue); padding-bottom: 15px; margin-bottom: 40px;">
+                    <h2 style="color:var(--blue); margin:0; text-transform: uppercase;">Commercial Proposal</h2>
+                    <img src="https://ugc.production.linktr.ee/3ac8045d-7d8d-48af-9246-f76f55b2bf32_WhatsApp-Image-2025-12-18-at-1.26.45-PM.jpeg?io=true&size=avatar-v3_0" class="inner-logo">
+                </div>
+
+                <p><b>Proposal Date:</b> <span id="out-date"></span></p>
+                
                 <table>
                     <thead>
                         <tr>
-                            <th>Description</th>
-                            <th>Qty (Panels)</th>
+                            <th style="width: 55%;">Service Description</th>
+                            <th>Qty (Nos)</th>
                             <th>Rate</th>
-                            <th>Total Amount</th>
+                            <th>Amount</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td>Solar Module Wet Cleaning Service<br><small>(Using DM Water & Specialized Brushes)</small></td>
-                            <td id="view-qty">1000</td>
-                            <td id="view-rate">₹20</td>
-                            <td id="view-subtotal">₹20,000</td>
+                            <td><b>Annual/Periodic Solar Maintenance</b><br>
+                            <small style="color: #666;">Comprehensive wet cleaning, structural health check, and DC side inspection.</small></td>
+                            <td id="out-qty-t">3200</td>
+                            <td id="out-rate-t">₹25</td>
+                            <td id="out-sub">₹80,000</td>
                         </tr>
                     </tbody>
                 </table>
 
-                <div class="grand-total-section">
-                    <div class="total-row"><span>Subtotal</span> <span id="final-subtotal">₹20,000</span></div>
-                    <div class="total-row"><span>GST (<span id="view-gst-per">18</span>%)</span> <span id="final-gst">₹3,600</span></div>
-                    <div class="grand-total"><span>GRAND TOTAL</span> <span id="final-grand">₹23,600</span></div>
+                <div class="total-block">
+                    <div class="flex-row"><span>Service Subtotal</span> <span id="p-sub">₹80,000</span></div>
+                    <div class="flex-row"><span>GST @ <span id="out-gst-p">18</span>%</span> <span id="p-gst">₹14,400</span></div>
+                    <div class="flex-row grand-row"><span>Grand Total</span> <span id="p-grand">₹94,400</span></div>
                 </div>
 
-                <div style="margin-top: 200px; font-size: 12px;">
-                    <h4 style="color:var(--blue)">Terms & Conditions:</h4>
-                    <ul>
-                        <li>Safe access and water connection to be provided by client.</li>
-                        <li>Payment: 100% after completion of service.</li>
-                        <li>Validity: 15 Days.</li>
+                <div style="margin-top: 60px; font-size: 0.85rem; color: #555;">
+                    <h4 style="color: var(--blue); margin-bottom: 10px;">TERMS & CONDITIONS</h4>
+                    <ul style="padding-left: 18px; line-height: 1.8;">
+                        <li><b>Validity:</b> 15 Days from the date of proposal.</li>
+                        <li><b>Prerequisites:</b> Client to provide water supply and secure access to the roof.</li>
+                        <li><b>Safety:</b> Anantam team follows full PPE and safety protocols on site.</li>
+                        <li><b>Payment:</b> 100% on successful completion of service.</li>
+                        <li><b>Legal:</b> Subject to Junagadh Jurisdiction.</li>
                     </ul>
+                </div>
+
+                <div class="footer-info">
+                    <p>E & O.E.</p>
+                    <p>Authorised Signatory, <b>Anantam Solar</b></p>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        function updatePreview() {
-            const client = document.getElementById('in-client').value;
-            const loc = document.getElementById('in-loc').value;
-            const cap = document.getElementById('in-cap').value;
+        function update() {
+            const client = document.getElementById('in-client').value || "CLIENT NAME";
+            const loc = document.getElementById('in-loc').value || "TBA";
             const qty = parseFloat(document.getElementById('in-qty').value) || 0;
+            const cap = document.getElementById('in-cap').value || "0 Kw";
             const rate = parseFloat(document.getElementById('in-rate').value) || 0;
-            const gstPer = parseFloat(document.getElementById('in-gst').value) || 0;
+            const gstP = parseFloat(document.getElementById('in-gst').value) || 0;
 
-            const subtotal = qty * rate;
-            const gstAmt = (subtotal * gstPer) / 100;
-            const total = subtotal + gstAmt;
+            const sub = qty * rate;
+            const gstA = (sub * gstP) / 100;
+            const grand = sub + gstA;
 
-            document.getElementById('view-client').innerText = client;
-            document.getElementById('view-loc').innerText = loc;
-            document.getElementById('view-cap').innerText = cap;
-            document.getElementById('view-qty').innerText = qty;
-            document.getElementById('view-rate').innerText = '₹' + rate;
-            document.getElementById('view-subtotal').innerText = '₹' + subtotal.toLocaleString('en-IN');
-            document.getElementById('final-subtotal').innerText = '₹' + subtotal.toLocaleString('en-IN');
-            document.getElementById('view-gst-per').innerText = gstPer;
-            document.getElementById('final-gst').innerText = '₹' + gstAmt.toLocaleString('en-IN');
-            document.getElementById('final-grand').innerText = '₹' + total.toLocaleString('en-IN');
-            document.getElementById('view-date').innerText = new Date().toLocaleDateString('en-IN');
+            document.getElementById('out-client').innerText = client.toUpperCase();
+            document.getElementById('out-loc').innerText = loc;
+            document.getElementById('out-qty-c').innerText = qty.toLocaleString();
+            document.getElementById('out-qty-t').innerText = qty.toLocaleString();
+            document.getElementById('out-cap').innerText = cap;
+            document.getElementById('out-rate-t').innerText = "₹" + rate;
+            
+            const subStr = "₹" + sub.toLocaleString('en-IN');
+            const gstStr = "₹" + gstA.toLocaleString('en-IN');
+            const grandStr = "₹" + grand.toLocaleString('en-IN');
+
+            document.getElementById('out-sub').innerText = subStr;
+            document.getElementById('p-sub').innerText = subStr;
+            document.getElementById('out-gst-p').innerText = gstP;
+            document.getElementById('p-gst').innerText = gstStr;
+            document.getElementById('p-grand').innerText = grandStr;
+            
+            document.getElementById('out-date').innerText = new Date().toLocaleDateString('en-GB');
         }
 
-        function downloadPDF() {
-            const element = document.getElementById('pdf-content');
+        function download() {
+            const element = document.getElementById('pdf-template');
             const opt = {
                 margin: 0,
-                filename: 'Anantam_Solar_Quotation.pdf',
-                image: { type: 'jpeg', quality: 1 },
-                html2canvas: { scale: 3, useCORS: true },
+                filename: 'Anantam_Solar_Maintenance_Proposal.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
             html2pdf().set(opt).from(element).save();
         }
-
-        updatePreview();
+        update();
     </script>
 </body>
 </html>
