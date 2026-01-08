@@ -7,74 +7,69 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
-        :root { --brand: #002e5d; --accent: #f9b115; --bg: #0f172a; --card: #ffffff; }
-        * { box-sizing: border-box; -webkit-print-color-adjust: exact; }
+        :root { --brand: #002e5d; --accent: #f9b115; --bg: #0f172a; }
+        * { box-sizing: border-box; -webkit-print-color-adjust: exact; margin: 0; padding: 0; }
         
-        body { font-family: 'Outfit', sans-serif; margin: 0; background: var(--bg); color: white; display: flex; height: 100vh; overflow: hidden; }
+        body { font-family: 'Outfit', sans-serif; background: var(--bg); color: white; display: flex; height: 100vh; overflow: hidden; }
 
-        /* ACTIVE SIDEBAR */
-        .sidebar { width: 400px; background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); padding: 30px; border-right: 1px solid rgba(255,255,255,0.1); overflow-y: auto; }
-        .sidebar h2 { color: var(--accent); font-weight: 800; letter-spacing: -1px; margin-bottom: 30px; display: flex; align-items: center; gap: 10px; }
-        .sidebar h2::before { content: ''; width: 12px; height: 12px; background: #22c55e; border-radius: 50%; display: inline-block; box-shadow: 0 0 10px #22c55e; }
-        
-        .input-group { margin-bottom: 20px; background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px; transition: 0.3s; }
-        .input-group:hover { background: rgba(255,255,255,0.08); }
-        label { display: block; font-size: 0.7rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px; }
-        input { width: 100%; background: transparent; border: none; border-bottom: 2px solid rgba(255,255,255,0.1); color: white; font-size: 1rem; padding: 5px 0; outline: none; transition: 0.3s; }
-        input:focus { border-color: var(--accent); }
-
-        .btn-action { background: var(--accent); color: var(--brand); border: none; width: 100%; padding: 20px; font-weight: 800; cursor: pointer; border-radius: 12px; margin-top: 20px; font-size: 1rem; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; }
-        .btn-action:hover { transform: scale(1.02); box-shadow: 0 0 20px rgba(249, 177, 21, 0.4); }
+        /* SIDEBAR UI */
+        .sidebar { width: 380px; background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); padding: 30px; border-right: 1px solid rgba(255,255,255,0.1); overflow-y: auto; flex-shrink: 0; }
+        .sidebar h2 { color: var(--accent); font-weight: 800; margin-bottom: 25px; font-size: 1.2rem; }
+        .input-group { margin-bottom: 15px; background: rgba(255,255,255,0.03); padding: 12px; border-radius: 10px; }
+        label { display: block; font-size: 0.65rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; margin-bottom: 5px; }
+        input { width: 100%; background: transparent; border: none; border-bottom: 1px solid rgba(255,255,255,0.2); color: white; font-size: 0.9rem; padding: 5px 0; outline: none; }
+        .btn-action { background: var(--accent); color: var(--brand); border: none; width: 100%; padding: 18px; font-weight: 800; cursor: pointer; border-radius: 10px; margin-top: 10px; text-transform: uppercase; }
 
         /* PREVIEW AREA */
-        .preview-area { flex-grow: 1; padding: 40px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; background: #1e293b; }
+        .preview-area { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; background: #1e293b; }
         #pdf-content { width: 210mm; }
 
-        /* PAGE SETUP */
+        /* A4 PAGE LOGIC - Fixed height to 296.5mm to prevent blank pages */
         .a4-page { 
-            width: 210mm; height: 297mm; background: white; color: #1e293b;
+            width: 210mm; height: 296.5mm; background: white; color: #1e293b;
             display: flex; flex-direction: column; position: relative;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5); margin-bottom: 40px; page-break-after: always;
+            page-break-after: always; overflow: hidden;
         }
 
-        /* HEADER & FOOTER */
-        .page-header { background: var(--brand); height: 280px; position: relative; clip-path: polygon(0 0, 100% 0, 100% 80%, 0% 100%); display: flex; padding: 60px; align-items: flex-start; }
-        .page-header .logo-container { width: 160px; height: 160px; background: white; border-radius: 24px; padding: 15px; border: 4px solid var(--accent); z-index: 10; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        /* HEADER - Removed Golden Line and adjusted height */
+        .page-header { background: var(--brand); height: 240px; position: relative; clip-path: polygon(0 0, 100% 0, 100% 85%, 0% 100%); display: flex; padding: 50px 60px; align-items: flex-start; flex-shrink: 0; }
+        .logo-container { width: 150px; height: 150px; background: white; border-radius: 20px; padding: 15px; border: 4px solid var(--accent); box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
         
-        .page-body { flex-grow: 1; padding: 40px 60px; position: relative; }
+        /* BODY - Reduced gap (the "red boxed" area) */
+        .page-body { flex-grow: 1; padding: 20px 60px; position: relative; }
         
         .page-footer { 
-            height: 120px; background: #f8fafc; border-top: 6px solid var(--brand); 
+            height: 100px; background: #f8fafc; border-top: 4px solid var(--brand); 
             padding: 0 60px; display: flex; justify-content: space-between; align-items: center; 
-            font-size: 0.85rem; color: #64748b; 
+            font-size: 0.8rem; color: #64748b; flex-shrink: 0;
         }
 
-        /* TYPOGRAPHY */
-        h1.display { font-size: 4rem; font-weight: 800; line-height: 0.9; margin: 20px 0; color: var(--brand); letter-spacing: -2px; }
-        .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 40px; }
-        .stat-card { border: 1px solid #e2e8f0; padding: 20px; border-radius: 16px; position: relative; overflow: hidden; }
-        .stat-card::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 4px; background: var(--accent); }
-        .stat-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; font-weight: 700; }
-        .stat-value { font-size: 1.4rem; font-weight: 800; color: var(--brand); }
+        h1.display { font-size: 3.8rem; font-weight: 800; line-height: 1; margin: 10px 0; color: var(--brand); text-transform: uppercase; letter-spacing: -1px; }
+        
+        .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 25px; }
+        .stat-card { border: 1px solid #e2e8f0; padding: 15px; border-radius: 12px; border-bottom: 4px solid var(--accent); }
+        .stat-label { font-size: 0.65rem; color: #64748b; text-transform: uppercase; font-weight: 700; }
+        .stat-value { font-size: 1.2rem; font-weight: 800; color: var(--brand); }
 
         /* SERVICE TILES */
-        .service-tile { display: flex; gap: 20px; margin-bottom: 25px; align-items: flex-start; }
-        .tile-icon { width: 50px; height: 50px; background: #f1f5f9; border-radius: 12px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: var(--brand); font-weight: 800; border: 1px solid #e2e8f0; }
-        .tile-content h4 { margin: 0 0 5px 0; color: var(--brand); }
-        .tile-content p { margin: 0; font-size: 0.85rem; color: #475569; line-height: 1.5; }
+        .service-tile { display: flex; gap: 15px; margin-bottom: 20px; }
+        .tile-icon { width: 40px; height: 40px; background: #f1f5f9; border-radius: 10px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: var(--brand); font-weight: 800; border: 1px solid #e2e8f0; }
+        .tile-content h4 { margin: 0 0 3px 0; color: var(--brand); font-size: 1rem; }
+        .tile-content p { margin: 0; font-size: 0.8rem; color: #475569; line-height: 1.4; }
 
-        /* COMMERCIAL TABLE */
-        .quote-table { width: 100%; border-collapse: collapse; margin-top: 30px; }
-        .quote-table th { background: #f8fafc; padding: 15px; text-align: left; font-size: 0.75rem; color: #64748b; border-bottom: 2px solid #e2e8f0; }
-        .quote-table td { padding: 20px 15px; border-bottom: 1px solid #f1f5f9; }
-        .total-section { margin-top: 30px; background: var(--brand); color: white; border-radius: 20px; padding: 30px; }
-        .total-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 1rem; }
-        .grand-total { border-top: 1px solid rgba(255,255,255,0.2); padding-top: 15px; margin-top: 15px; font-size: 2rem; font-weight: 800; color: var(--accent); }
+        /* TABLE */
+        .quote-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .quote-table th { background: #f8fafc; padding: 12px; text-align: left; font-size: 0.7rem; color: #64748b; border-bottom: 2px solid #e2e8f0; }
+        .quote-table td { padding: 15px 12px; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
+        
+        .total-section { margin-top: 20px; background: var(--brand); color: white; border-radius: 15px; padding: 25px; }
+        .total-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem; }
+        .grand-total { border-top: 1px solid rgba(255,255,255,0.2); padding-top: 12px; margin-top: 12px; font-size: 1.8rem; font-weight: 800; color: var(--accent); }
 
         @media print {
             .sidebar { display: none; }
             .preview-area { padding: 0; background: white; }
-            .a4-page { box-shadow: none; margin: 0; }
+            .a4-page { box-shadow: none; margin: 0; height: 297mm; }
         }
     </style>
 </head>
@@ -82,33 +77,13 @@
 
     <aside class="sidebar">
         <h2>ANANTAM PORTAL</h2>
-        
-        <div class="input-group">
-            <label>Client Name</label>
-            <input type="text" id="in-client" value="Tirth Agro" oninput="update()">
-        </div>
-        <div class="input-group">
-            <label>Location</label>
-            <input type="text" id="in-loc" value="Rajkot" oninput="update()">
-        </div>
-        <div class="input-group">
-            <label>Panel Quantity</label>
-            <input type="number" id="in-qty" value="3200" oninput="update()">
-        </div>
-        <div class="input-group">
-            <label>System Capacity (kW)</label>
-            <input type="text" id="in-cap" value="1056 Kw" oninput="update()">
-        </div>
-        <div class="input-group">
-            <label>Service Rate (₹/Panel)</label>
-            <input type="number" id="in-rate" value="25" oninput="update()">
-        </div>
-        <div class="input-group">
-            <label>GST Percentage</label>
-            <input type="number" id="in-gst" value="18" oninput="update()">
-        </div>
-
-        <button class="btn-action" onclick="generatePDF()">Download Professional Quote</button>
+        <div class="input-group"><label>Client Name</label><input type="text" id="in-client" value="Tirth Agro" oninput="update()"></div>
+        <div class="input-group"><label>Location</label><input type="text" id="in-loc" value="Rajkot" oninput="update()"></div>
+        <div class="input-group"><label>Panel Qty</label><input type="number" id="in-qty" value="3200" oninput="update()"></div>
+        <div class="input-group"><label>Capacity</label><input type="text" id="in-cap" value="1056 Kw" oninput="update()"></div>
+        <div class="input-group"><label>Rate (₹)</label><input type="number" id="in-rate" value="25" oninput="update()"></div>
+        <div class="input-group"><label>GST %</label><input type="number" id="in-gst" value="18" oninput="update()"></div>
+        <button class="btn-action" onclick="generatePDF()">Download Quote</button>
     </aside>
 
     <main class="preview-area">
@@ -119,140 +94,78 @@
                     <div class="logo-container">
                         <img src="https://ugc.production.linktr.ee/3ac8045d-7d8d-48af-9246-f76f55b2bf32_WhatsApp-Image-2025-12-18-at-1.26.45-PM.jpeg?io=true&size=avatar-v3_0" style="width: 100%; border-radius: 10px;">
                     </div>
-                    <div style="margin-left: 30px; margin-top: 10px;">
-                        <h3 style="margin: 0; letter-spacing: 4px; font-weight: 300;">ANANTAM SOLAR</h3>
-                        <p style="color: var(--accent); font-weight: 700; margin: 0;">ASSET RECOVERY & MAINTENANCE</p>
+                    <div style="margin-left: 25px; color: white;">
+                        <h3 style="margin: 0; letter-spacing: 3px; font-weight: 400; font-size: 1.1rem;">ANANTAM SOLAR</h3>
+                        <p style="color: var(--accent); font-weight: 700; font-size: 0.8rem;">ASSET RECOVERY & MAINTENANCE</p>
                     </div>
                 </header>
 
                 <div class="page-body">
-                    <p style="font-weight: 600; color: #94a3b8; margin-bottom: 0;">SERVICE PROPOSAL FOR</p>
+                    <p style="font-weight: 600; color: #94a3b8; font-size: 0.8rem;">SERVICE PROPOSAL FOR</p>
                     <h1 class="display" id="out-client">TIRTH AGRO</h1>
                     
                     <div class="stat-grid">
-                        <div class="stat-card">
-                            <div class="stat-label">Site Location</div>
-                            <div class="stat-value" id="out-loc">Rajkot</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Module Count</div>
-                            <div class="stat-value" id="out-qty-c">3,200</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Plant Size</div>
-                            <div class="stat-value" id="out-cap">1056 Kw</div>
-                        </div>
+                        <div class="stat-card"><div class="stat-label">Location</div><div class="stat-value" id="out-loc">Rajkot</div></div>
+                        <div class="stat-card"><div class="stat-label">Modules</div><div class="stat-value" id="out-qty-c">3,200</div></div>
+                        <div class="stat-card"><div class="stat-label">Capacity</div><div class="stat-value" id="out-cap">1056 Kw</div></div>
                     </div>
 
-                    <div style="margin-top: 60px; padding: 30px; background: #f8fafc; border-radius: 24px;">
-                        <h3 style="margin-top: 0; color: var(--brand);">Executive Summary</h3>
-                        <p style="color: #475569; font-size: 0.95rem; line-height: 1.7;">Solar modules are subject to "soiling losses" which can reduce ROI by up to 30%. This proposal outlines the Anantam Professional Service Protocol designed to restore peak photovoltaic efficiency and ensure electrical safety compliance for your asset.</p>
+                    <div style="margin-top: 30px; padding: 25px; background: #f8fafc; border-radius: 15px; border-left: 5px solid var(--brand);">
+                        <h4 style="color: var(--brand); margin-bottom: 5px;">Executive Summary</h4>
+                        <p style="color: #475569; font-size: 0.85rem; line-height: 1.5;">Solar modules lose up to 30% efficiency due to environmental soiling. Our Professional Protocol is engineered to restore peak output and ensure safety compliance.</p>
                     </div>
                 </div>
 
                 <footer class="page-footer">
-                    <div><b>Anantam Solar</b> | Junagadh, Gujarat</div>
-                    <div style="text-align: right;">Official Service Partner<br>+91 96014 66066</div>
+                    <div><b>Anantam Solar</b> | Junagadh</div>
+                    <div>+91 96014 66066</div>
                 </footer>
             </section>
 
             <section class="a4-page">
-                <div class="page-body" style="padding-top: 60px;">
-                    <div style="border-bottom: 4px solid var(--accent); width: 80px; margin-bottom: 20px;"></div>
-                    <h2 style="font-size: 2.5rem; color: var(--brand); margin: 0 0 40px 0;">Technical Scope</h2>
-
+                <div class="page-body" style="padding-top: 50px;">
+                    <h2 style="font-size: 2rem; color: var(--brand); margin-bottom: 30px;">Technical Scope</h2>
                     <div class="service-tile">
                         <div class="tile-icon">01</div>
-                        <div class="tile-content">
-                            <h4>Nano-Brush Wet Cleaning</h4>
-                            <p>Utilizing high-grade demineralized water and specialized solar brushes to eliminate hard water scaling and industrial soot without scratching the glass surface.</p>
-                        </div>
+                        <div class="tile-content"><h4>Nano-Brush Wet Cleaning</h4><p>Scale-free cleaning using demineralized water and solar-specific soft brushes.</p></div>
                     </div>
-
                     <div class="service-tile">
                         <div class="tile-icon">02</div>
-                        <div class="tile-content">
-                            <h4>Thermal & Health Audit</h4>
-                            <p>Visual inspection for hotspots, cell browning, and micro-cracks that cause internal resistance and drop in power generation.</p>
-                        </div>
+                        <div class="tile-content"><h4>Thermal & Health Audit</h4><p>Detailed inspection for hotspots and micro-cracks impacting ROI.</p></div>
                     </div>
-
                     <div class="service-tile">
                         <div class="tile-icon">03</div>
-                        <div class="tile-content">
-                            <h4>DC Integrity Management</h4>
-                            <p>Checking MC4 connector tightness and DC cable routing to mitigate potential fire risks due to loose connections.</p>
-                        </div>
+                        <div class="tile-content"><h4>DC Integrity Check</h4><p>Verification of MC4 connectors and cable routing to prevent fire risks.</p></div>
                     </div>
-
-                    <div class="service-tile">
-                        <div class="tile-icon">04</div>
-                        <div class="tile-content">
-                            <h4>Structural Tightening</h4>
-                            <p>Audit of module mounting clamps and earthing strips to ensure the plant is structurally secure against high wind loads.</p>
-                        </div>
-                    </div>
-
-                    <div style="margin-top: 50px; background: #fff7ed; padding: 30px; border-radius: 20px; border: 1px dashed var(--accent);">
-                        <h4 style="color: #9a3412; margin-top: 0;">SAFETY FIRST POLICY</h4>
-                        <p style="font-size: 0.85rem; color: #9a3412;">Anantam Solar operators are equipped with full body harnesses, electrical safety shoes, and helmets. We follow strict rooftop safety protocols to protect both our people and your property.</p>
+                    <div style="margin-top: 40px; background: #fff7ed; padding: 25px; border-radius: 15px; border: 1px dashed var(--accent);">
+                        <h4 style="color: #9a3412; margin-bottom: 5px; font-size: 0.9rem;">SAFETY COMPLIANCE</h4>
+                        <p style="font-size: 0.75rem; color: #9a3412;">Our team utilizes full PPE and rooftop safety harnesses for zero-incident operations.</p>
                     </div>
                 </div>
-
-                <footer class="page-footer">
-                    <div>Expertise. Safety. Generation.</div>
-                    <div>Page 02</div>
-                </footer>
+                <footer class="page-footer"><div>Quality. Safety. Generation.</div><div>Page 02</div></footer>
             </section>
 
             <section class="a4-page">
-                <div class="page-body" style="padding-top: 60px;">
-                    <h2 style="font-size: 2.5rem; color: var(--brand); margin: 0 0 10px 0;">Commercials</h2>
-                    <p style="color: #64748b;">Investment summary for comprehensive plant maintenance.</p>
-
+                <div class="page-body" style="padding-top: 50px;">
+                    <h2 style="font-size: 2rem; color: var(--brand); margin-bottom: 10px;">Commercials</h2>
                     <table class="quote-table">
-                        <thead>
-                            <tr>
-                                <th>DESCRIPTION OF SERVICE</th>
-                                <th>QTY</th>
-                                <th>UNIT RATE</th>
-                                <th style="text-align: right;">TOTAL AMOUNT</th>
-                            </tr>
-                        </thead>
+                        <thead><tr><th>SERVICE DESCRIPTION</th><th>QTY</th><th>RATE</th><th style="text-align: right;">TOTAL</th></tr></thead>
                         <tbody>
                             <tr>
-                                <td>
-                                    <b>Asset Maintenance & Cleaning</b><br>
-                                    <span style="font-size: 0.75rem; color: #94a3b8;">Includes washing, inspection, and health report.</span>
-                                </td>
+                                <td><b>Asset Maintenance & Cleaning</b><br><small style="color: #94a3b8;">Full washing + health inspection report.</small></td>
                                 <td id="out-qty-t">3,200</td>
                                 <td id="out-rate-t">₹25</td>
                                 <td style="text-align: right; font-weight: 700;" id="out-sub">₹80,000</td>
                             </tr>
                         </tbody>
                     </table>
-
                     <div class="total-section">
-                        <div class="total-row"><span>Service Subtotal</span> <span id="f-sub">₹80,000</span></div>
+                        <div class="total-row"><span>Subtotal</span> <span id="f-sub">₹80,000</span></div>
                         <div class="total-row"><span>GST @ <span id="out-gst-p">18</span>%</span> <span id="f-gst">₹14,400</span></div>
                         <div class="grand-total"><span>Total Payable</span> <span id="f-grand">₹94,400</span></div>
                     </div>
-
-                    <div style="margin-top: 40px; font-size: 0.8rem; color: #64748b;">
-                        <h4 style="color: var(--brand); margin-bottom: 10px;">TERMS OF SERVICE</h4>
-                        <ul style="padding-left: 20px; line-height: 1.8;">
-                            <li><b>Validity:</b> This quote is active for 15 days.</li>
-                            <li><b>Support:</b> Client to provide water connection and site access points.</li>
-                            <li><b>Payment:</b> 100% on successful site handover.</li>
-                            <li><b>Legal:</b> All disputes subject to Junagadh Jurisdiction.</li>
-                        </ul>
-                    </div>
                 </div>
-
-                <footer class="page-footer">
-                    <p>E & O.E.</p>
-                    <p><b>Anantam Solar</b> | Authorised Signatory</p>
-                </footer>
+                <footer class="page-footer"><p>E & O.E.</p><p><b>Anantam Solar</b></p></footer>
             </section>
 
         </div>
@@ -266,7 +179,6 @@
             const cap = document.getElementById('in-cap').value || "0 Kw";
             const rate = parseFloat(document.getElementById('in-rate').value) || 0;
             const gstP = parseFloat(document.getElementById('in-gst').value) || 0;
-
             const sub = qty * rate;
             const gstA = (sub * gstP) / 100;
             const grand = sub + gstA;
@@ -277,16 +189,11 @@
             document.getElementById('out-qty-t').innerText = qty.toLocaleString();
             document.getElementById('out-cap').innerText = cap;
             document.getElementById('out-rate-t').innerText = "₹" + rate;
-            
-            const subS = "₹" + sub.toLocaleString('en-IN');
-            const gstS = "₹" + gstA.toLocaleString('en-IN');
-            const grandS = "₹" + grand.toLocaleString('en-IN');
-
-            document.getElementById('out-sub').innerText = subS;
-            document.getElementById('f-sub').innerText = subS;
+            document.getElementById('out-sub').innerText = "₹" + sub.toLocaleString('en-IN');
+            document.getElementById('f-sub').innerText = "₹" + sub.toLocaleString('en-IN');
             document.getElementById('out-gst-p').innerText = gstP;
-            document.getElementById('f-gst').innerText = gstS;
-            document.getElementById('f-grand').innerText = grandS;
+            document.getElementById('f-gst').innerText = "₹" + gstA.toLocaleString('en-IN');
+            document.getElementById('f-grand').innerText = "₹" + grand.toLocaleString('en-IN');
         }
 
         function generatePDF() {
@@ -295,7 +202,7 @@
                 margin: 0,
                 filename: 'Anantam_Solar_Proposal.pdf',
                 image: { type: 'jpeg', quality: 1 },
-                html2canvas: { scale: 3, useCORS: true },
+                html2canvas: { scale: 3, useCORS: true, letterRendering: true },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
             html2pdf().set(opt).from(element).save();
