@@ -12,6 +12,33 @@ function hideLoading() {
   if (loader) loader.style.display = "none";
 }
 
+function showToast(message, type = "success") {
+  let container = document.getElementById("toast-container");
+  if (!container) {
+    container = document.createElement("div");
+    container.id = "toast-container";
+    document.body.appendChild(container);
+  }
+
+  const toast = document.createElement("div");
+  toast.className = `toast toast-${type}`;
+  toast.innerText = message;
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.classList.add("show");
+  }, 10);
+
+  setTimeout(() => {
+    toast.classList.remove("show");
+    setTimeout(() => {
+      if (toast.parentNode === container) {
+        container.removeChild(toast);
+      }
+    }, 300);
+  }, 3000);
+}
+
 /* ================= LOGIN ================= */
 
 document.getElementById("loginForm")?.addEventListener("submit", async function (e) {
@@ -120,66 +147,53 @@ async function selectBuilding(building, element) {
 
 async function loadStudentsFromSheet() {
   showLoading();
-
-  try {
-    const res = await fetch(API_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "getStudents",
-        hostel: currentHostel,
-        building: currentBuilding
-      })
-    });
-
-    students = await res.json();
-
-    // Default status EMPTY (not marked)
-    students = students.map(s => ({
-      ...s,
-      status: ""
-    }));
-
-    await loadAttendanceForDate();
-    renderStudents();
-
-  } catch (err) {
-    alert("Error loading students");
-  }
-
-  hideLoading();
-}
-
-/* ================= LOAD PAST ATTENDANCE ================= */
-
-async function loadAttendanceForDate() {
   const date = document.getElementById("attendanceDate").value;
 
   try {
-    const res = await fetch(API_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "getAttendance",
-        hostel: currentHostel,
-        building: currentBuilding,
-        date
+    const [studentsRes, attendanceRes] = await Promise.all([
+      fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          action: "getStudents",
+          hostel: currentHostel,
+          building: currentBuilding
+        })
+      }),
+      fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          action: "getAttendance",
+          hostel: currentHostel,
+          building: currentBuilding,
+          date
+        })
       })
-    });
+    ]);
 
-    const attendance = await res.json();
-
-    if (attendance.length > 0) {
-      students = students.map(student => {
-        const found = attendance.find(a => a.hostelNo === student.hostelNo);
-        if (found) {
-          return { ...student, status: found.status };
-        }
-        return student;
-      });
+    const studentsData = await studentsRes.json();
+    let attendanceData = [];
+    try {
+      attendanceData = await attendanceRes.json();
+    } catch (e) {
+      console.log("No previous attendance or error parsing it");
     }
 
+    students = studentsData.map(s => {
+      const found = Array.isArray(attendanceData) ? attendanceData.find(a => a.hostelNo === s.hostelNo) : null;
+      return {
+        ...s,
+        status: found ? found.status : ""
+      };
+    });
+
+    renderStudents();
+
   } catch (err) {
-    console.log("No previous attendance");
+    console.error(err);
+    showToast("Error loading students", "error");
   }
+
+  hideLoading();
 }
 
 /* ================= RENDER ================= */
@@ -200,30 +214,34 @@ function renderStudents() {
     div.className = "student-card";
 
     div.innerHTML = `
-      <div>
-        <b>${s.hostelNo}</b><br>
-        ${s.name}
+      <div class="student-info">
+        <b>${s.hostelNo}</b>
+        <span>${s.name}</span>
       </div>
-      <div>
-        <button class="status-btn ${s.status === "Present" ? "present" : ""}" 
+      <div class="student-actions">
+        <button class="status-btn ${s.status === "Present" ? "present active" : ""}"
           onclick="markStatus(${index}, 'Present')">
           Present
         </button>
 
-        <button class="status-btn ${s.status === "Absent" ? "absent" : ""}" 
+        <button class="status-btn ${s.status === "Absent" ? "absent active" : ""}"
           onclick="markStatus(${index}, 'Absent')">
           Absent
         </button>
 
         <button class="remove-btn" 
-          onclick="removeStudent('${s.hostelNo}')">
-          Remove
+          onclick="removeStudent('${s.hostelNo}')" title="Remove Student">
+          <i data-lucide="trash-2"></i>
         </button>
       </div>
     `;
 
     list.appendChild(div);
   });
+
+  if (window.lucide) {
+    lucide.createIcons();
+  }
 
   document.getElementById("totalCount").innerText = students.length;
   document.getElementById("presentCount").innerText = present;
@@ -265,29 +283,42 @@ async function saveStudent() {
   const building = document.getElementById("newBuilding").value;
 
   if (!hostelNo || !name) {
-    alert("Please fill all fields");
+    showToast("Please fill all fields", "warning");
     return;
   }
 
   showLoading();
 
-  await fetch(API_URL, {
-    method: "POST",
-    body: JSON.stringify({
-      action: "addStudent",
-      hostel: currentHostel,
-      building,
-      hostelNo,
-      name
-    })
-  });
+  try {
+    await fetch(API_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "addStudent",
+        hostel: currentHostel,
+        building,
+        hostelNo,
+        name
+      })
+    });
+
+    if (building === currentBuilding) {
+      students.push({ hostelNo, name, status: "" });
+      // Sort students by hostelNo if needed, but current code doesn't seem to sort
+      renderStudents();
+    }
+
+    showToast("Student Added Successfully", "success");
+    closeAddStudent();
+
+    // Clear fields
+    document.getElementById("newHostelNo").value = "";
+    document.getElementById("newStudentName").value = "";
+  } catch (err) {
+    console.error(err);
+    showToast("Error adding student", "error");
+  }
 
   hideLoading();
-
-  alert("Student Added Successfully");
-
-  closeAddStudent();
-  await loadStudentsFromSheet();
 }
 
 /* ================= REMOVE STUDENT ================= */
@@ -297,20 +328,26 @@ async function removeStudent(hostelNo) {
 
   showLoading();
 
-  await fetch(API_URL, {
-    method: "POST",
-    body: JSON.stringify({
-      action: "removeStudent",
-      hostel: currentHostel,
-      building: currentBuilding,
-      hostelNo
-    })
-  });
+  try {
+    await fetch(API_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "removeStudent",
+        hostel: currentHostel,
+        building: currentBuilding,
+        hostelNo
+      })
+    });
+
+    students = students.filter(s => s.hostelNo !== hostelNo);
+    renderStudents();
+    showToast("Student Removed Successfully", "success");
+  } catch (err) {
+    console.error(err);
+    showToast("Error removing student", "error");
+  }
 
   hideLoading();
-
-  alert("Student Removed Successfully");
-  await loadStudentsFromSheet();
 }
 
 /* ================= SAVE ATTENDANCE ================= */
@@ -318,13 +355,13 @@ async function removeStudent(hostelNo) {
 async function saveAttendance() {
 
   if (!currentBuilding) {
-    alert("Please select a building");
+    showToast("Please select a building", "warning");
     return;
   }
 
   const unmarked = students.filter(s => s.status === "");
   if (unmarked.length > 0) {
-    alert("Please mark attendance for all students.");
+    showToast("Please mark attendance for all students.", "warning");
     return;
   }
 
@@ -333,21 +370,26 @@ async function saveAttendance() {
   const date = document.getElementById("attendanceDate").value;
   const markedBy = localStorage.getItem("adminName");
 
-  await fetch(API_URL, {
-    method: "POST",
-    body: JSON.stringify({
-      action: "saveAttendance",
-      hostel: currentHostel,
-      building: currentBuilding,
-      date,
-      markedBy,
-      records: students
-    })
-  });
+  try {
+    await fetch(API_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "saveAttendance",
+        hostel: currentHostel,
+        building: currentBuilding,
+        date,
+        markedBy,
+        records: students
+      })
+    });
+
+    showToast("Attendance Saved Successfully", "success");
+  } catch (err) {
+    console.error(err);
+    showToast("Error saving attendance", "error");
+  }
 
   hideLoading();
-
-  alert("Attendance Saved Successfully");
 }
 
 /* ================= BACK ================= */
