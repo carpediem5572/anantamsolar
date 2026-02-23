@@ -1,31 +1,52 @@
 const API_URL = "https://script.google.com/macros/s/AKfycbzrnf1jMEyetNF64mZns1ahyNOVLtByvG5t8vtTP4tsC0oavAdlZcNcEvRD3zmx5AhmAg/exec";
 
+/* ================= UTILITIES ================= */
+
+function showLoading() {
+  const loader = document.getElementById("loadingOverlay");
+  if (loader) loader.style.display = "flex";
+}
+
+function hideLoading() {
+  const loader = document.getElementById("loadingOverlay");
+  if (loader) loader.style.display = "none";
+}
+
 /* ================= LOGIN ================= */
 
 document.getElementById("loginForm")?.addEventListener("submit", async function (e) {
   e.preventDefault();
 
+  showLoading();
+
   const username = document.getElementById("username").value;
   const password = document.getElementById("password").value;
 
-  const res = await fetch(API_URL, {
-    method: "POST",
-    body: JSON.stringify({
-      action: "login",
-      username,
-      password
-    })
-  });
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "login",
+        username,
+        password
+      })
+    });
 
-  const data = await res.json();
+    const data = await res.json();
 
-  if (data.status === "success") {
-    localStorage.setItem("isLoggedIn", "true");
-    localStorage.setItem("adminName", username);
-    window.location.href = "portal.html";
-  } else {
-    document.getElementById("errorMsg").innerText = "Invalid Login";
+    if (data.status === "success") {
+      localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("adminName", username);
+      window.location.href = "portal.html";
+    } else {
+      document.getElementById("errorMsg").innerText = "Invalid Login";
+    }
+
+  } catch (err) {
+    alert("Login error. Please try again.");
   }
+
+  hideLoading();
 });
 
 /* ================= PORTAL INIT ================= */
@@ -34,9 +55,12 @@ if (document.getElementById("adminName")) {
   document.getElementById("adminName").innerText =
     "Logged in: " + localStorage.getItem("adminName");
 
-  // Set today date default
   const today = new Date().toISOString().split("T")[0];
   document.getElementById("attendanceDate").value = today;
+
+  document.getElementById("attendanceDate").addEventListener("change", () => {
+    if (currentBuilding) loadStudentsFromSheet();
+  });
 }
 
 /* ================= GLOBAL STATE ================= */
@@ -95,25 +119,34 @@ async function selectBuilding(building, element) {
 /* ================= LOAD STUDENTS ================= */
 
 async function loadStudentsFromSheet() {
-  const res = await fetch(API_URL, {
-    method: "POST",
-    body: JSON.stringify({
-      action: "getStudents",
-      hostel: currentHostel,
-      building: currentBuilding
-    })
-  });
+  showLoading();
 
-  students = await res.json();
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "getStudents",
+        hostel: currentHostel,
+        building: currentBuilding
+      })
+    });
 
-  // Default status Present
-  students = students.map(s => ({
-    ...s,
-    status: "Present"
-  }));
+    students = await res.json();
 
-  await loadAttendanceForDate();
-  renderStudents();
+    // Default status EMPTY (not marked)
+    students = students.map(s => ({
+      ...s,
+      status: ""
+    }));
+
+    await loadAttendanceForDate();
+    renderStudents();
+
+  } catch (err) {
+    alert("Error loading students");
+  }
+
+  hideLoading();
 }
 
 /* ================= LOAD PAST ATTENDANCE ================= */
@@ -121,26 +154,31 @@ async function loadStudentsFromSheet() {
 async function loadAttendanceForDate() {
   const date = document.getElementById("attendanceDate").value;
 
-  const res = await fetch(API_URL, {
-    method: "POST",
-    body: JSON.stringify({
-      action: "getAttendance",
-      hostel: currentHostel,
-      building: currentBuilding,
-      date
-    })
-  });
-
-  const attendance = await res.json();
-
-  if (attendance.length > 0) {
-    students = students.map(student => {
-      const found = attendance.find(a => a.hostelNo === student.hostelNo);
-      if (found) {
-        return { ...student, status: found.status };
-      }
-      return student;
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "getAttendance",
+        hostel: currentHostel,
+        building: currentBuilding,
+        date
+      })
     });
+
+    const attendance = await res.json();
+
+    if (attendance.length > 0) {
+      students = students.map(student => {
+        const found = attendance.find(a => a.hostelNo === student.hostelNo);
+        if (found) {
+          return { ...student, status: found.status };
+        }
+        return student;
+      });
+    }
+
+  } catch (err) {
+    console.log("No previous attendance");
   }
 }
 
@@ -154,11 +192,13 @@ function renderStudents() {
   let absent = 0;
 
   students.forEach((s, index) => {
+
     if (s.status === "Present") present++;
-    else absent++;
+    if (s.status === "Absent") absent++;
 
     const div = document.createElement("div");
     div.className = "student-card";
+
     div.innerHTML = `
       <div>
         <b>${s.hostelNo}</b><br>
@@ -166,9 +206,19 @@ function renderStudents() {
       </div>
       <div>
         <button class="status-btn ${s.status === "Present" ? "present" : ""}" 
-          onclick="markStatus(${index}, 'Present')">P</button>
+          onclick="markStatus(${index}, 'Present')">
+          Present
+        </button>
+
         <button class="status-btn ${s.status === "Absent" ? "absent" : ""}" 
-          onclick="markStatus(${index}, 'Absent')">A</button>
+          onclick="markStatus(${index}, 'Absent')">
+          Absent
+        </button>
+
+        <button class="remove-btn" 
+          onclick="removeStudent('${s.hostelNo}')">
+          Remove
+        </button>
       </div>
     `;
 
@@ -194,6 +244,7 @@ function openAddStudent() {
 
   const dropdown = document.getElementById("newBuilding");
   dropdown.innerHTML = "";
+
   const buildingCount = currentHostel === "SBH" ? 6 : 2;
 
   for (let i = 1; i <= buildingCount; i++) {
@@ -209,14 +260,16 @@ function closeAddStudent() {
 }
 
 async function saveStudent() {
-  const hostelNo = document.getElementById("newHostelNo").value;
-  const name = document.getElementById("newStudentName").value;
+  const hostelNo = document.getElementById("newHostelNo").value.trim();
+  const name = document.getElementById("newStudentName").value.trim();
   const building = document.getElementById("newBuilding").value;
 
   if (!hostelNo || !name) {
     alert("Please fill all fields");
     return;
   }
+
+  showLoading();
 
   await fetch(API_URL, {
     method: "POST",
@@ -229,20 +282,56 @@ async function saveStudent() {
     })
   });
 
+  hideLoading();
+
+  alert("Student Added Successfully");
+
   closeAddStudent();
+  await loadStudentsFromSheet();
+}
+
+/* ================= REMOVE STUDENT ================= */
+
+async function removeStudent(hostelNo) {
+  if (!confirm("Are you sure you want to remove this student?")) return;
+
+  showLoading();
+
+  await fetch(API_URL, {
+    method: "POST",
+    body: JSON.stringify({
+      action: "removeStudent",
+      hostel: currentHostel,
+      building: currentBuilding,
+      hostelNo
+    })
+  });
+
+  hideLoading();
+
+  alert("Student Removed Successfully");
   await loadStudentsFromSheet();
 }
 
 /* ================= SAVE ATTENDANCE ================= */
 
 async function saveAttendance() {
-  const date = document.getElementById("attendanceDate").value;
-  const markedBy = localStorage.getItem("adminName");
 
   if (!currentBuilding) {
     alert("Please select a building");
     return;
   }
+
+  const unmarked = students.filter(s => s.status === "");
+  if (unmarked.length > 0) {
+    alert("Please mark attendance for all students.");
+    return;
+  }
+
+  showLoading();
+
+  const date = document.getElementById("attendanceDate").value;
+  const markedBy = localStorage.getItem("adminName");
 
   await fetch(API_URL, {
     method: "POST",
@@ -256,8 +345,12 @@ async function saveAttendance() {
     })
   });
 
+  hideLoading();
+
   alert("Attendance Saved Successfully");
 }
+
+/* ================= BACK ================= */
 
 function goBack() {
   currentHostel = "";
