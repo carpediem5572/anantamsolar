@@ -1,19 +1,27 @@
-document.getElementById("loginForm")?.addEventListener("submit", function(e) {
+const API_URL = "https://script.google.com/macros/s/AKfycbzrnf1jMEyetNF64mZns1ahyNOVLtByvG5t8vtTP4tsC0oavAdlZcNcEvRD3zmx5AhmAg/exec";
+document.getElementById("loginForm")?.addEventListener("submit", async function(e){
   e.preventDefault();
 
   const username = document.getElementById("username").value;
   const password = document.getElementById("password").value;
-  const errorMsg = document.getElementById("errorMsg");
 
-  // Temporary static login
-  if (username === "admin" && password === "1234") {
-    
+  const res = await fetch(API_URL, {
+    method: "POST",
+    body: JSON.stringify({
+      action: "login",
+      username,
+      password
+    })
+  });
+
+  const data = await res.json();
+
+  if (data.status === "success") {
     localStorage.setItem("isLoggedIn", "true");
     localStorage.setItem("adminName", username);
-
     window.location.href = "portal.html";
   } else {
-    errorMsg.textContent = "Invalid username or password";
+    document.getElementById("errorMsg").innerText = "Invalid Login";
   }
 });
 
