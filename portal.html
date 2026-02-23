@@ -17,7 +17,7 @@
 
 <div class="portal-container">
 
-  <!-- 🔷 Top Header -->
+  <!-- 🔷 HEADER -->
   <header class="top-bar">
     <div class="logo-title">
       <h2>Shivaji Hostel Admin Portal</h2>
@@ -25,16 +25,16 @@
     </div>
 
     <div class="admin-controls">
-      <span id="adminName" class="admin-name"></span>
+      <span id="adminName"></span>
       <button onclick="logout()" class="logout-btn">Logout</button>
     </div>
   </header>
 
-  <!-- 🔷 Hostel Selection -->
+  <!-- 🔷 HOSTEL SELECTION -->
   <section id="hostelSelection" class="card-section">
     <div class="card" onclick="openHostel('SBH')">
       <h3>Shivaji Boys Hostel</h3>
-      <p>6 Buildings • Daily Attendance</p>
+      <p>6 Buildings • 150+ Students</p>
     </div>
 
     <div class="card" onclick="openHostel('SGH')">
@@ -43,11 +43,12 @@
     </div>
   </section>
 
-  <!-- 🔷 Hostel Dashboard Section -->
+  <!-- 🔷 MAIN HOSTEL SECTION -->
   <section id="hostelSection" class="hostel-section" style="display:none;">
 
-    <!-- Section Header -->
+    <!-- SECTION HEADER -->
     <div class="section-header">
+
       <div class="left-controls">
         <button onclick="goBack()" class="back-btn">← Back</button>
         <h3 id="hostelTitle"></h3>
@@ -58,37 +59,41 @@
         <button onclick="openAddStudent()" class="add-btn">+ Add Student</button>
         <button onclick="saveAttendance()" class="save-btn">💾 Save</button>
       </div>
+
     </div>
 
-    <!-- 🔷 Building Tabs -->
+    <!-- BUILDING TABS -->
     <div id="buildingTabs" class="tabs"></div>
 
-    <!-- 🔷 Live Counter -->
+    <!-- LIVE COUNTER -->
     <div class="live-counter">
       <div class="counter-box">
-        <span>Total</span>
+        <span>Total Students</span>
         <b id="totalCount">0</b>
       </div>
+
       <div class="counter-box present-box">
         <span>Present</span>
         <b id="presentCount">0</b>
       </div>
+
       <div class="counter-box absent-box">
         <span>Absent</span>
         <b id="absentCount">0</b>
       </div>
     </div>
 
-    <!-- 🔷 Attendance List -->
+    <!-- ATTENDANCE LIST -->
     <div id="attendanceList" class="attendance-list"></div>
 
   </section>
 
 </div>
 
-<!-- 🔷 Add Student Modal -->
+<!-- 🔷 ADD STUDENT MODAL -->
 <div id="addStudentModal" class="modal">
   <div class="modal-content">
+
     <div class="modal-header">
       <h3>Add New Student</h3>
       <button onclick="closeAddStudent()" class="close-btn">✕</button>
@@ -104,7 +109,13 @@
       <button onclick="saveStudent()" class="save-btn">Save</button>
       <button onclick="closeAddStudent()" class="cancel-btn">Cancel</button>
     </div>
+
   </div>
+</div>
+
+<!-- 🔷 LOADING OVERLAY -->
+<div id="loadingOverlay" class="loading-overlay">
+  <div class="loader"></div>
 </div>
 
 <script src="js/app.js"></script>
