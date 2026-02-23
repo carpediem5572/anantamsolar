@@ -129,3 +129,28 @@ function saveStudent() {
   renderStudents();
   closeAddStudent();
 }
+
+async function saveAttendance() {
+  const date = document.getElementById("attendanceDate").value;
+  const markedBy = localStorage.getItem("adminName");
+
+  const records = students.map(s => ({
+    hostelNo: s.hostelNo,
+    name: s.name,
+    status: s.status
+  }));
+
+  await fetch(API_URL, {
+    method: "POST",
+    body: JSON.stringify({
+      action: "saveAttendance",
+      hostel: currentHostel,
+      building: currentBuilding,
+      date,
+      markedBy,
+      records
+    })
+  });
+
+  alert("Attendance Saved Successfully");
+}
