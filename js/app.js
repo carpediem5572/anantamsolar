@@ -70,7 +70,8 @@ document.getElementById("loginForm")?.addEventListener("submit", async function 
     }
 
   } catch (err) {
-    alert("Login error. Please try again.");
+    console.error("Login Error:", err);
+    showToast("Login error. Please try again.", "error");
   }
 
   hideLoading();
@@ -146,7 +147,12 @@ async function selectBuilding(building, element) {
 /* ================= LOAD STUDENTS ================= */
 
 async function loadStudentsFromSheet() {
-  showLoading();
+  const list = document.getElementById("attendanceList");
+  const skeleton = document.getElementById("skeletonLoader");
+
+  list.style.display = "none";
+  skeleton.style.display = "flex";
+
   const date = document.getElementById("attendanceDate").value;
 
   try {
@@ -170,12 +176,20 @@ async function loadStudentsFromSheet() {
       })
     ]);
 
+    if (!studentsRes.ok || !attendanceRes.ok) {
+      throw new Error(`HTTP Error: ${studentsRes.status} / ${attendanceRes.status}`);
+    }
+
     const studentsData = await studentsRes.json();
+    if (!Array.isArray(studentsData)) {
+      throw new Error("Invalid students data format");
+    }
+
     let attendanceData = [];
     try {
       attendanceData = await attendanceRes.json();
     } catch (e) {
-      console.log("No previous attendance or error parsing it");
+      console.warn("No previous attendance or error parsing it:", e);
     }
 
     students = studentsData.map(s => {
@@ -189,11 +203,12 @@ async function loadStudentsFromSheet() {
     renderStudents();
 
   } catch (err) {
-    console.error(err);
-    showToast("Error loading students", "error");
+    console.error("Load Error:", err);
+    showToast("Error loading students. Please check your connection.", "error");
+  } finally {
+    list.style.display = "grid";
+    skeleton.style.display = "none";
   }
-
-  hideLoading();
 }
 
 /* ================= RENDER ================= */
@@ -287,10 +302,18 @@ async function saveStudent() {
     return;
   }
 
-  showLoading();
+  // Optimistic UI Update if adding to current building
+  let originalStudents = [...students];
+  if (building === currentBuilding) {
+    students.push({ hostelNo, name, status: "" });
+    renderStudents();
+  }
+
+  showToast("Adding student...", "warning");
+  closeAddStudent();
 
   try {
-    await fetch(API_URL, {
+    const res = await fetch(API_URL, {
       method: "POST",
       body: JSON.stringify({
         action: "addStudent",
@@ -301,24 +324,24 @@ async function saveStudent() {
       })
     });
 
-    if (building === currentBuilding) {
-      students.push({ hostelNo, name, status: "" });
-      // Sort students by hostelNo if needed, but current code doesn't seem to sort
-      renderStudents();
-    }
+    const data = await res.json();
+    if (data.status !== "success") throw new Error("API failed");
 
     showToast("Student Added Successfully", "success");
-    closeAddStudent();
 
     // Clear fields
     document.getElementById("newHostelNo").value = "";
     document.getElementById("newStudentName").value = "";
   } catch (err) {
-    console.error(err);
-    showToast("Error adding student", "error");
+    console.error("Add Error:", err);
+    // Revert state if it was added to current building
+    if (building === currentBuilding) {
+      students = originalStudents;
+      renderStudents();
+    }
+    showToast("Error adding student. Please try again.", "error");
+    openAddStudent(); // Re-open to allow fixing
   }
-
-  hideLoading();
 }
 
 /* ================= REMOVE STUDENT ================= */
@@ -326,10 +349,16 @@ async function saveStudent() {
 async function removeStudent(hostelNo) {
   if (!confirm("Are you sure you want to remove this student?")) return;
 
-  showLoading();
+  // Optimistic UI Update
+  const originalStudents = [...students];
+  students = students.filter(s => s.hostelNo !== hostelNo);
+  renderStudents();
+
+  // Show a non-blocking notification
+  showToast("Removing student...", "warning");
 
   try {
-    await fetch(API_URL, {
+    const res = await fetch(API_URL, {
       method: "POST",
       body: JSON.stringify({
         action: "removeStudent",
@@ -339,21 +368,22 @@ async function removeStudent(hostelNo) {
       })
     });
 
-    students = students.filter(s => s.hostelNo !== hostelNo);
-    renderStudents();
+    const data = await res.json();
+    if (data.status !== "success") throw new Error("API failed");
+
     showToast("Student Removed Successfully", "success");
   } catch (err) {
-    console.error(err);
-    showToast("Error removing student", "error");
+    console.error("Remove Error:", err);
+    // Revert state on failure
+    students = originalStudents;
+    renderStudents();
+    showToast("Error removing student. Please try again.", "error");
   }
-
-  hideLoading();
 }
 
 /* ================= SAVE ATTENDANCE ================= */
 
 async function saveAttendance() {
-
   if (!currentBuilding) {
     showToast("Please select a building", "warning");
     return;
@@ -365,13 +395,13 @@ async function saveAttendance() {
     return;
   }
 
-  showLoading();
+  showToast("Saving attendance...", "warning");
 
   const date = document.getElementById("attendanceDate").value;
   const markedBy = localStorage.getItem("adminName");
 
   try {
-    await fetch(API_URL, {
+    const res = await fetch(API_URL, {
       method: "POST",
       body: JSON.stringify({
         action: "saveAttendance",
@@ -383,13 +413,14 @@ async function saveAttendance() {
       })
     });
 
+    const data = await res.json();
+    if (data.status !== "success") throw new Error("API failed");
+
     showToast("Attendance Saved Successfully", "success");
   } catch (err) {
-    console.error(err);
-    showToast("Error saving attendance", "error");
+    console.error("Save Attendance Error:", err);
+    showToast("Error saving attendance. Please try again.", "error");
   }
-
-  hideLoading();
 }
 
 /* ================= BACK ================= */
