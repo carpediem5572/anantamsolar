@@ -5,6 +5,7 @@
   <title>Shivaji Hostel Portal</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="css/style.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
 
@@ -26,18 +27,23 @@
 
     <div class="admin-controls">
       <span id="adminName"></span>
-      <button onclick="logout()" class="logout-btn">Logout</button>
+      <button onclick="logout()" class="logout-btn">
+        <i data-lucide="log-out"></i>
+        <span>Logout</span>
+      </button>
     </div>
   </header>
 
   <!-- 🔷 HOSTEL SELECTION -->
   <section id="hostelSelection" class="card-section">
     <div class="card" onclick="openHostel('SBH')">
+      <div class="card-icon"><i data-lucide="home"></i></div>
       <h3>Shivaji Boys Hostel</h3>
       <p>6 Buildings • 150+ Students</p>
     </div>
 
     <div class="card" onclick="openHostel('SGH')">
+      <div class="card-icon"><i data-lucide="home"></i></div>
       <h3>Shivaji Girls Hostel</h3>
       <p>Attendance & Records</p>
     </div>
@@ -50,14 +56,23 @@
     <div class="section-header">
 
       <div class="left-controls">
-        <button onclick="goBack()" class="back-btn">← Back</button>
+        <button onclick="goBack()" class="back-btn">
+          <i data-lucide="arrow-left"></i>
+          <span>Back</span>
+        </button>
         <h3 id="hostelTitle"></h3>
       </div>
 
       <div class="right-controls">
         <input type="date" id="attendanceDate">
-        <button onclick="openAddStudent()" class="add-btn">+ Add Student</button>
-        <button onclick="saveAttendance()" class="save-btn">💾 Save</button>
+        <button onclick="openAddStudent()" class="add-btn">
+          <i data-lucide="user-plus"></i>
+          <span>Add Student</span>
+        </button>
+        <button onclick="saveAttendance()" class="save-btn">
+          <i data-lucide="save"></i>
+          <span>Save</span>
+        </button>
       </div>
 
     </div>
@@ -96,17 +111,26 @@
 
     <div class="modal-header">
       <h3>Add New Student</h3>
-      <button onclick="closeAddStudent()" class="close-btn">✕</button>
+      <button onclick="closeAddStudent()" class="close-btn"><i data-lucide="x"></i></button>
     </div>
 
     <div class="modal-body">
-      <input type="text" id="newHostelNo" placeholder="Hostel No">
-      <input type="text" id="newStudentName" placeholder="Student Name">
-      <select id="newBuilding"></select>
+      <div class="input-group">
+        <i data-lucide="hash"></i>
+        <input type="text" id="newHostelNo" placeholder="Hostel No">
+      </div>
+      <div class="input-group">
+        <i data-lucide="user"></i>
+        <input type="text" id="newStudentName" placeholder="Student Name">
+      </div>
+      <div class="input-group">
+        <i data-lucide="building-2"></i>
+        <select id="newBuilding"></select>
+      </div>
     </div>
 
     <div class="modal-footer">
-      <button onclick="saveStudent()" class="save-btn">Save</button>
+      <button onclick="saveStudent()" class="save-btn">Save Student</button>
       <button onclick="closeAddStudent()" class="cancel-btn">Cancel</button>
     </div>
 
@@ -116,8 +140,12 @@
 <!-- 🔷 LOADING OVERLAY -->
 <div id="loadingOverlay" class="loading-overlay">
   <div class="loader"></div>
+  <p>Processing...</p>
 </div>
 
 <script src="js/app.js"></script>
+<script>
+  lucide.createIcons();
+</script>
 </body>
 </html>
