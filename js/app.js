@@ -258,3 +258,12 @@ async function saveAttendance() {
 
   alert("Attendance Saved Successfully");
 }
+
+function goBack() {
+  currentHostel = "";
+  currentBuilding = "";
+  students = [];
+
+  document.getElementById("hostelSection").style.display = "none";
+  document.getElementById("hostelSelection").style.display = "flex";
+}
