@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Shivaji Hostel Portal</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<script>
+  // 🔐 Protect Page
+  if (!localStorage.getItem("isLoggedIn")) {
+    window.location.href = "login.html";
+  }
+</script>
+
+<div class="portal-container">
+
+  <!-- Top Header -->
+  <div class="top-bar">
+    <h2>Shivaji Hostel Admin Portal</h2>
+    <div>
+      <span id="adminName"></span>
+      <button onclick="logout()" class="logout-btn">Logout</button>
+    </div>
+  </div>
+
+  <!-- Hostel Selection -->
+  <div id="hostelSelection" class="card-section">
+    <div class="card" onclick="openHostel('SBH')">
+      <h3>Shivaji Boys Hostel</h3>
+    </div>
+    <div class="card" onclick="openHostel('SGH')">
+      <h3>Shivaji Girls Hostel</h3>
+    </div>
+  </div>
+
+  <!-- Hostel Dashboard Section -->
+  <div id="hostelSection" style="display:none;">
+
+    <div class="section-header">
+      <h3 id="hostelTitle"></h3>
+      <input type="date" id="attendanceDate">
+      <button onclick="openAddStudent()" class="add-btn">+ Add Student</button>
+    </div>
+
+    <!-- Building Tabs -->
+    <div id="buildingTabs" class="tabs"></div>
+
+    <!-- Live Counter -->
+    <div class="live-counter">
+      <span>Total: <b id="totalCount">0</b></span>
+      <span>Present: <b id="presentCount">0</b></span>
+      <span>Absent: <b id="absentCount">0</b></span>
+    </div>
+
+    <!-- Attendance List -->
+    <div id="attendanceList"></div>
+
+  </div>
+
+</div>
+
+<!-- Add Student Modal -->
+<div id="addStudentModal" class="modal">
+  <div class="modal-content">
+    <h3>Add Student</h3>
+    <input type="text" id="newHostelNo" placeholder="Hostel No">
+    <input type="text" id="newStudentName" placeholder="Student Name">
+    <select id="newBuilding"></select>
+    <button onclick="saveStudent()">Save</button>
+    <button onclick="closeAddStudent()" class="cancel-btn">Cancel</button>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
